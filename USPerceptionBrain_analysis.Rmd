@@ -1,0 +1,839 @@
+---
+title: "Perceived sensitivity of brain data"
+author: "Shenyang Huang"
+date: "09/04/2023"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+Script written 07/20/2021 for first submission
+Script updated 09/04/2023 for JLB revision 1
+
+# Set up
+
+## - R library
+```{r setup, message=FALSE, warning=FALSE}
+# tidy data
+library(MASS)
+library(tidyr)
+library(tidyverse)
+
+# factor analysis
+library(paran)
+library(psych)
+library(GPArotation)
+
+# mixed model
+library(lme4)
+library(lmerTest)
+library(emmeans)
+library(car)
+
+# figures
+library(ggeffects)
+library(ggplot2)
+library(ggpubr)
+library(gghalves)
+library(cowplot)
+library(patchwork)
+rm(list=ls())
+invisible(gc())
+
+knitr::opts_chunk$set(echo = F)
+
+```
+
+
+## - load full data to exclude participants
+```{r}
+df_sens_full <- read.csv("data/Final Brain Data Sensitivity for SSI_October 19, 2020_15.16 (4).csv") %>%
+  mutate(Duration..in.seconds. = strtoi(Duration..in.seconds.),
+         Progress = strtoi(Progress))
+
+### remove two extra "header rows"
+df_sens_selected <- df_sens_full[3:nrow(df_sens_full),] 
+n_recruited <- nrow(df_sens_selected) 
+
+### 1. remove those who did not consent
+# consented <- !grepl("DO NOT", df_sens$consent)
+consented <- grepl("I agree to", df_sens_full$consent)
+df_sens_selected <- df_sens_full[consented, ] 
+
+### 2. remove those that did not finish
+finished <- df_sens_selected$Finished=="True"
+df_sens_selected <- df_sens_selected[finished, ] 
+
+### 3. failed manipulation check
+passed_check <- df_sens_selected$sensitive.informatio_36=="somewhat sensitive\n"
+df_sens_selected <- df_sens_selected[passed_check, ]
+
+### 4. completion time
+too_slow <- df_sens_selected$Duration..in.seconds. > 31*60
+too_fast <- df_sens_selected$Duration..in.seconds. < 3*60
+df_sens_selected <- df_sens_selected[!(too_slow | too_fast), ]
+
+cat(
+  sprintf("Recruited: %s \n", n_recruited),
+  sprintf("Did not consent: %s \n", sum(!consented)),
+  sprintf("Did not finish: %s \n", sum(!finished)),
+  sprintf("Failed attention check: %s \n", sum(!passed_check)),
+  sprintf("> 31 min: %s \n", sum(too_slow)),
+  sprintf("< 3 min: %s \n", sum(too_fast)),
+  sprintf("excluded: %s \n",
+          sum(!consented)+sum(!finished)+sum(!passed_check)+sum(too_slow)+sum(too_fast)),
+  sprintf("remaining: %s \n", nrow(df_sens_selected))
+)
+# View(df_sens)
+
+```
+
+
+## - format the dataframe
+```{r}
+df_sens <- df_sens_selected %>%
+  select(
+    pid,
+    ### demographics
+    Gender, Race, Age, Edu, Income, marital, PO,
+    ### perception of sensitive information: 35 items + 1 attention check
+    starts_with("sensitive.informatio_"), -sensitive.informatio_36,
+    ### other measures pertaining to tech
+    EarAdopt, # whether one consider themselves an early adoptor of tech
+    WearTech, # do they use wearable tech
+  ) %>%
+  rename(ID = pid,
+         Marital = marital) %>%
+  ### use the midpoint of the levels and transform age to a continous variable
+  mutate(Age_rescale = case_when(
+    Age=="18-24" ~ 21,
+    Age=="25-34" ~ 29.5,
+    Age=="35-44" ~ 39.5,
+    Age=="45-54" ~ 49.5,
+    Age=="55-64" ~ 59.5,
+    Age=="65+" ~ 70)) %>%
+  ### convert to ordinal variable 1-6, six age groups
+  mutate(AgeLvl = case_when(
+    Age=="18-24" ~ 1,
+    Age=="25-34" ~ 2,
+    Age=="35-44" ~ 3,
+    Age=="45-54" ~ 4,
+    Age=="55-64" ~ 5,
+    Age=="65+" ~ 6)) %>%
+  ### five levels to three
+  mutate(EarAdoptLvl = case_when(
+    grepl("generally the first", EarAdopt) ~ 1,
+    grepl("among the first", EarAdopt) ~ 2,
+    grepl("in the middle", EarAdopt) ~ 3,
+    grepl("among the last", EarAdopt) ~ 4,
+    grepl("generally the last", EarAdopt) ~ 5)) %>%
+  ### binary categorization based on "college degree" or higher
+  mutate(CollegeDegree = case_when(
+    Edu %in% c("Graduate/Professional school or beyond ",
+               "College graduate") ~ "college degree",
+    Edu %in% c("Less than high school",
+               "High school graduate or equivalent",
+               "Some college ") ~ "no college degree")) %>%
+  ### order income 1-9, nine groups
+  mutate(IncomeLvl = case_when(
+    Income=="Less than $15,000 " ~ 1,
+    Income=="$15,000 - $24,999 " ~ 2,
+    Income=="$25,000 - $34,999 " ~ 3,
+    Income=="$35,000 - $49,999 " ~ 4,
+    Income=="$50,000 - $74,999 " ~ 5,
+    Income=="$75,000 - $99,999 " ~ 6,
+    Income=="$100,000 - $149,999 " ~ 7,
+    Income=="$150,000 - $199,999" ~ 8,
+    Income=="More than $200,000" ~ 9)) %>%
+  ### transform the sensitive information columns from textual to numeric
+  mutate(across(starts_with("sensitive.informatio_"), 
+                \(x) case_when(
+                  grepl("very sensitive", x) ~ 4,
+                  grepl("somewhat sensitive", x) ~ 3,
+                  grepl("not too sensitive", x) ~ 2,
+                  grepl("not at all sensitive", x) ~ 1
+                ))) %>%
+  ### rearrange columns
+  relocate(Age_rescale, AgeLvl, .after=Age) %>%
+  relocate(EarAdoptLvl, .after=EarAdopt) %>%
+  relocate(CollegeDegree, .after=Edu) %>%
+  relocate(IncomeLvl, .after=Income)
+
+
+### rename sensitive information 1-35 based on the actual item
+# View(df_sens)
+
+
+### use the two extra "header rows" to match sensitive information 1-36 to actual items
+df_sens_item <- df_sens_full[1, ] %>% 
+  select(starts_with("sensitive.informatio_")) %>%
+  mutate(across(everything(), \(x) str_split(x, "have access to it. - ", simplify = TRUE)[,2])) %>%
+  t() %>% 
+  data.frame() %>% 
+  rownames_to_column(var="SI") %>%
+  rename("Item"=X1)
+
+### convert column names from 1-36 to actual items
+### and use more readable labels for each SI question
+SI_labels <- list(
+  "_1" = c("SI_1_SSN", "Social Security Number"),
+  "_2" = c("SI_2_health", "Health"),
+  "_4" = c("SI_4_phone", "Phone Conversations"), 
+  "_5" = c("SI_5_email", "Email Messages"),
+  "_6" = c("SI_6_location", "Location"),
+  "_7" = c("SI_7_texts", "Text Messages"),
+  "_8" = c("SI_8_numbers", "Phone Numbers Called/Texted"),
+  "_9" = c("SI_9_birthdate", "Birth Date"),
+  "_10" = c("SI_10_relationship", "Relationship History"),
+  "_11" = c("SI_11_website", "Websites Visited"),
+  "_12" = c("SI_12_search", "Online Search History"),
+  "_13" = c("SI_13_religion", "Religious Views"),
+  "_14" = c("SI_14_friends", "Friends"),
+  "_15" = c("SI_15_politics", "Political Views"),
+  "_16" = c("SI_16_media", "Media Preferences"),
+  "_17" = c("SI_17_purchases", "Purchasing Habits"),
+  "_18" = c("SI_18_credit", "Credit Score"),
+  "_19" = c("SI_19_drowsiness", "Drowsiness"),
+  "_20" = c("SI_20_alertness", "Alertness"),
+  "_21" = c("SI_21_focus", "Focus"),
+  "_22" = c("SI_22_concentration", "Concentration"),
+  "_24" = c("SI_24_brainwave", "Brainwaves"),
+  "_25" = c("SI_25_brain.health", "Brain Health"),
+  "_26" = c("SI_26_substance", "Substance Use"),
+  "_27" = c("SI_27_emotion", "Emotions"),
+  "_28" = c("SI_28_anxiety", "Anxiety"),
+  "_29" = c("SI_29_mental.image", "Images in mind"),
+  "_30" = c("SI_30_mental.thoughts", "Thoughts in mind"),
+  "_31" = c("SI_31_intelligence", "Intelligence Quotient"),
+  "_32" = c("SI_32_sleep", "Sleep Patterns"),
+  "_33" = c("SI_33_sexual.orientation", "Sexual Orientation"),
+  "_34" = c("SI_34_genetic", "Genetic information"),
+  "_35" = c("SI_35_social.media", "Social Media Contents")
+)
+
+### renaming
+for (i in 1:length(SI_labels)) {
+  item <- names(SI_labels)[i]
+  original_colname <- paste0("sensitive.informatio", item)
+  new_colname <- SI_labels[[item]][1]
+  df_sens[new_colname] <- df_sens[original_colname]
+}
+df_sens <- df_sens %>% 
+  select(-starts_with("sensitive.informatio_"))
+
+### save data on disk
+write.csv(df_sens, "data/data_sensitivity.csv", row.names = F)
+rm(list=ls()[!grepl('SI_labels', ls())])
+
+```
+
+
+## - load data and format
+```{r}
+df_sens <- read.csv("data/data_sensitivity.csv") %>%
+  mutate(ID = 
+           factor(ID),
+         WearTech = 
+           factor(WearTech,
+                  levels=c("No", "Yes")),
+         CollegeDegree = 
+           factor(CollegeDegree,
+                  levels=c("no college degree", "college degree")))
+
+```
+
+
+## - demographics
+```{r, echo=FALSE}
+cat(sprintf(
+  "Gender breakdown: %i Female, %i Male, and %i Other. 
+  \n All of the following demographic breakdown will be in the percentage of the total sample size. 
+The age breakdown of our participants was as follows: 18 – 24 = %.1f%%, 25 – 34 = %.1f%%, 35 – 44 = %.1f%%, 45 – 54 = %.1f%%, 55 – 64 = %.1f%%, and 65+ = %.1f%%. 
+The racial breakdown of our participants is as follows: White = %.1f%%, Black = %.1f%%, Hispanic/Latino = %.1f%%, Asian = %.1f%%, American Indian/Alaska Native = %.1f%%, Native Hawaiian/other Pacific Islander = %.1f%%, and Other = %.1f%%. 
+The educational breakdown of our participants is as follows: less than high school = %.1f%%, High school graduate or equivalent = %.1f%%, Some college = %.1f%%, College graduate = %.1f%%, and Graduate/Professional school or beyond = %.1f%%.
+\n 
+The household income breakdown in percentage was as follows: Less than $15,000 = %.1f%%, $15,000 – $24,999 = %.1f%%, $25,000 – $34,999 = %.1f%%, $35,000 – $49,999 = %.1f%%, $50,000 – $74,999 = %.1f%%, $75,000 – $99,999 = %.1f%%, $100,000 – $149,999 = %.1f%%, $150,000 – $199,999 = %.1f%%, and %.1f%% of participants make more than $200,000. 
+The marital status breakdown of the participants was as follows: Never Married = %.1f%%, Married = %.1f%%, Separated = %.1f%%, Divorced = %.1f%%, and Widowed = %.1f%%. Lastly, the political affiliation breakdown of our participants is as follows: Democrat = %.1f%%, Independent = %.1f%%, Republican = %.1f%%, and Other = %.1f%%. 
+Table X below presents the demographic breakdown of the participants within this study by gender.",
+sum(df_sens$Gender=="Female"),
+sum(df_sens$Gender=="Male"),
+sum(df_sens$Gender=="Other"),
+mean(df_sens$Age=="18-24")*100,
+mean(df_sens$Age=="25-34")*100,
+mean(df_sens$Age=="35-44")*100,
+mean(df_sens$Age=="45-54")*100,
+mean(df_sens$Age=="55-64")*100,
+mean(df_sens$Age=="65+")*100,
+mean(df_sens$Race=="White")*100,
+mean(df_sens$Race=="Black ")*100,
+mean(df_sens$Race=="Hispanic or Latino")*100,
+mean(df_sens$Race=="Asian ")*100,
+mean(df_sens$Race=="American Indian or Alaska Native ")*100,
+mean(df_sens$Race=="Native Hawaiian or Other Pacific Islander ")*100,
+mean(df_sens$Race=="Other ")*100,
+mean(df_sens$Edu=="Less than high school")*100,
+mean(df_sens$Edu=="High school graduate or equivalent")*100,
+mean(df_sens$Edu=="some college")*100,
+mean(df_sens$Edu=="College graduate")*100,
+mean(df_sens$Edu=="Graduate/Professional school or beyond ")*100,
+mean(df_sens$Income=="Less than $15,000 ")*100,
+mean(df_sens$Income=="$15,000 - $24,999 ")*100,
+mean(df_sens$Income=="$25,000 - $34,999 ")*100,
+mean(df_sens$Income=="$35,000 - $49,999 ")*100,
+mean(df_sens$Income=="$50,000 - $74,999 ")*100,
+mean(df_sens$Income=="$75,000 - $99,999 ")*100,
+mean(df_sens$Income=="$100,000 - $149,999 ")*100,
+mean(df_sens$Income=="$150,000 - $199,999")*100,
+mean(df_sens$Income=="More than $200,000")*100,
+mean(df_sens$Marital=="Never married")*100,
+mean(df_sens$Marital=="Married")*100,
+mean(df_sens$Marital=="Separated")*100,
+mean(df_sens$Marital=="Divorced")*100,
+mean(df_sens$Marital=="Widowed")*100,
+mean(df_sens$PO=="Democrat")*100,
+mean(df_sens$PO=="Independent")*100,
+mean(df_sens$PO=="Republican")*100,
+mean(df_sens$PO=="Other")*100
+))
+
+```
+
+
+
+# Analyses
+
+# Individual Sensitivity questions
+
+## - full labels
+```{r}
+SI_items <- colnames(df_sens)
+SI_items <- SI_items[grepl("SI_", SI_items)]
+
+SI_labels_full <- c()
+for (i in 1:length(SI_labels)) {
+  SI_labels_full <- c(SI_labels_full, SI_labels[[i]][2])
+}
+names(SI_labels_full) <- SI_items
+SI_labels_full
+
+```
+
+
+## - percentage of responses, mean, and sd
+```{r}
+df_plot_SI_Qns_proportion <- data.frame(
+  cbind(1:4,
+        c("not at all sensitive",
+          "not too sensitive",
+          "somewhat sensitive",
+          "very sensitive"),
+        apply(df_sens[SI_items], 2, table)/nrow(df_sens))) %>%
+  rename(Sensitivity_num=V1,
+         Sensitivity_text=V2) %>%
+  pivot_longer(starts_with("SI_"),
+               names_to = "Item",
+               values_to = "proportion") %>%
+  mutate(Sensitivity_num = as.numeric(Sensitivity_num),
+         proportion = as.numeric(proportion))
+# View(df_plot_SI_Qns_percent)
+
+### compute mean, sd, and sem
+df_plot_SI_Qns_meansd <- data.frame(
+  cbind(apply(df_sens[SI_items], 2, mean),
+        apply(df_sens[SI_items], 2, sd))) %>%
+  rownames_to_column(var="Item") %>%
+  rename(mean=X1, sd=X2) %>%
+  mutate(se  = round(sd/sqrt(nrow(df_sens)-1), 2),
+         mean = round(mean, 2),
+         sd = round(sd, 2)) %>%
+  mutate(Description = SI_labels_full[Item]) %>%
+  relocate(Description, .after=Item) 
+
+### combine both dataframes
+df_plot_SI_Qns <- left_join(
+  df_plot_SI_Qns_proportion,
+  df_plot_SI_Qns_meansd
+) %>%
+  arrange(-mean) 
+
+### order items by highest to lowest proportion of 4s
+Item_order <- df_plot_SI_Qns %>% 
+  filter(Sensitivity_num==4) %>%
+  arrange(proportion) %>%
+  select(Item) %>%
+  unlist() %>% 
+  as.character()
+
+df_plot_SI_Qns <- df_plot_SI_Qns %>%
+  mutate(Item=factor(Item, levels=Item_order))
+
+write.csv(df_plot_SI_Qns, 'data/Figure1_pct_mean_sd.csv', row.names=F)
+df_plot_SI_Qns
+
+```
+
+
+## - plot by percentage 
+```{r}
+### arrange items by their proportion of "very sensitive" responses
+g_SI_pct <- df_plot_SI_Qns %>%
+  ggplot(aes(x=Item, 
+             y=proportion, 
+             fill=Sensitivity_text)) +
+  geom_bar(stat="identity") +
+  scale_x_discrete("Information Items Presented",
+                   labels=SI_labels_full) +
+  scale_y_continuous("Percentage of Responses",
+                     labels = scales::percent) +
+  scale_fill_discrete("Sensitivity Ratings") +
+  scale_fill_brewer(NULL,
+                    palette = 7,
+                    breaks=c(
+                      "very sensitive",
+                      "somewhat sensitive",
+                      "not too sensitive",
+                      "not at all sensitive")) +
+  ggtitle("Sensitivity Ratings of All Information Questions") +
+  coord_flip(expand = FALSE) +
+  theme_pubclean() +
+  theme(legend.position="bottom",
+        axis.ticks = element_blank(),
+        plot.margin = margin(0, 20, 0, 0)) +  
+  NULL
+
+g_SI_pct
+ggsave("figures/SI_pct.tiff", g_SI_pct, dpi=600, width=10, height=7)
+
+```
+
+
+
+# Exploratory Factor Analysis 
+
+## - EFA on 33 items and plot factor loadings
+```{r}
+### identifies latent variables supposedly exert causal influence on observed variables and influence covariance 
+
+### determine the number of factors to retain
+n_factors <- paran(df_sens[SI_items], seed=1, graph=TRUE)
+n_factors$Retained # 3 factors retained
+
+### run EFA
+theta <- 0.4 # threshold for loading to be considered
+fa_result <- fa(df_sens[SI_items], 
+                n_factors$Retained, 
+                rotate="promax", 
+                scores="Bartlett")
+df_fa_result <- data.frame(fa_result$loadings[]) %>%
+  rownames_to_column(var="Item") %>%
+  rename(F1=MR1,
+         F2=MR2,
+         F3=MR3) %>% 
+  mutate(pass1 = cut(F1, breaks = c(-Inf, theta, Inf),
+                     labels = c("low", "high"),
+                     right = TRUE),
+         pass2 = cut(F2, breaks = c(-Inf, theta, Inf),
+                     labels = c("low", "high"),
+                     right = TRUE),
+         pass3 = cut(F3, breaks = c(-Inf, theta, Inf),
+                     labels = c("low", "high"),
+                     right = TRUE))
+
+### reorder load_df into chunks of three factors
+df_fa1 <- df_fa_result %>% filter(pass1=="high") %>% 
+  arrange(-F1)
+df_fa2 <- df_fa_result %>% filter(pass2=="high") %>% 
+  arrange(-F2)
+df_fa3 <- df_fa_result %>% filter(pass3=="high") %>% 
+  arrange(-F3)
+df_fa0 <- df_fa_result %>% filter(pass1=="low", 
+                                  pass2=="low", 
+                                  pass3=="low") %>%
+  arrange(-F3)
+
+
+### In the figure, plot Public F3, Private F2, and Brain F1
+# df_fa_reordered <- rbind(df_fa3, df_fa2, df_fa1, df_fa0)
+df_fa_reordered <- rbind(df_fa1, df_fa2, df_fa3, df_fa0)
+
+for (i in 1:3) {
+  g <- ggbarplot(data=df_fa_reordered,
+                 x="Item",
+                 y=paste0("F", i),
+                 fill = paste0("pass", i),
+                 color = NULL) +
+    coord_flip() +
+    scale_x_discrete(labels=SI_labels_full) +
+    scale_y_continuous(name = "Loading", 
+                       limits = c(-0.25, 0.86),
+                       breaks = c(-0.2, 0, 0.4, 0.8)) +
+    theme_get() +
+    theme(plot.title = element_text(hjust=0.38)) +
+    rremove("legend") +
+    rremove("ylab") +
+    NULL
+  assign(paste0("g_F", i), g) 
+}
+g_F3 <- g_F3 + 
+  scale_fill_manual(values=ggplot2::alpha(c("gray85", "#00BA38"), 0.7)) +
+  ggtitle("Public") + 
+  rremove("xlab")
+g_F2 <- g_F2 + 
+  scale_fill_manual(values=ggplot2::alpha(c("gray85", "#619CFF"), 0.7)) +
+  ggtitle("Private") + 
+  rremove("y.text") + 
+  rremove("y.ticks") 
+g_F1 <- g_F1 + 
+  scale_fill_manual(values=ggplot2::alpha(c("gray85", "#F8766D"), 0.7)) +
+  ggtitle("Mental/Affective") + 
+  rremove("y.text") + 
+  rremove("y.ticks") + 
+  rremove("xlab")
+
+(g_F3 | g_F2| g_F1)
+ggsave("figures/SI_factor_loading.tiff", dpi=600, width=8, height=5)
+
+
+```
+
+
+## - factor score using weighted average
+```{r}
+# REF: https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1226&context=pare
+loadings_all <- fa_result$loadings
+load1_passed <- abs(loadings_all[,1]) >= theta ### mental/affective
+load2_passed <- abs(loadings_all[,2]) >= theta ### public
+load3_passed <- abs(loadings_all[,3]) >= theta ### private
+
+df_sens_fa <- df_sens %>% mutate(
+  ### Bartlett method
+  SI_factor1 = fa_result$scores[,1],
+  SI_factor2 = fa_result$scores[,2],
+  SI_factor3 = fa_result$scores[,3],
+  
+  ### weighted average based on factor loadings (if > 0.4)
+  SI_factor1_wa = 
+    rowSums(loadings_all[,1][load1_passed] * df_sens[SI_items][load1_passed]) / sum(loadings_all[,1][load1_passed]),
+  
+  SI_factor2_wa = 
+    rowSums(loadings_all[,2][load2_passed] * df_sens[SI_items][load2_passed]) / sum(loadings_all[,2][load2_passed]),
+  
+  SI_factor3_wa = 
+    rowSums(loadings_all[,3][load3_passed] * df_sens[SI_items][load3_passed]) / sum(loadings_all[,3][load3_passed]))
+
+### high correlation between Bartlett and weighted sum methods
+### however, weighted averages allow for cross-factor comparisons
+cor(df_sens_fa[c("SI_factor1", "SI_factor1_wa")]) %>% round(3)
+cor(df_sens_fa[c("SI_factor2", "SI_factor2_wa")]) %>% round(3)
+cor(df_sens_fa[c("SI_factor3", "SI_factor3_wa")]) %>% round(3)
+
+
+```
+
+
+## - long format data for regression
+```{r}
+df_sens_fa_long <- df_sens_fa %>%
+  select(-starts_with("SI_"), 
+         SI_factor1_wa, SI_factor2_wa, SI_factor3_wa) %>%
+  pivot_longer(cols=starts_with("SI_factor"),
+               names_pattern = "^SI_(.*)_wa", 
+               names_to = "Factor",
+               values_to = "Factor_score_wa") %>%
+  mutate(Factor = factor(Factor,
+                         levels=c("factor1", "factor2", "factor3")),
+         ### re-order the three factors
+         Factor_num = case_when(
+           Factor=="factor2" ~ 1,
+           Factor=="factor3" ~ 2,
+           Factor=="factor1" ~ 3),
+         Factor_name = case_when(
+           Factor=="factor2" ~ "Public",
+           Factor=="factor3" ~ "Private",
+           Factor=="factor1" ~ "Mental/Affective"))
+
+```
+
+
+## - plot factor scores
+```{r}
+### compute error bars
+errorbars <- df_sens_fa_long %>%
+  group_by(Factor_name, Factor_num) %>%
+  summarise(n=length(Factor_score_wa),
+            mean=mean(Factor_score_wa),
+            sd=sd(Factor_score_wa),
+            se=sd/sqrt(n-1),
+            lower=mean-sd,
+            upper=mean+sd) %>%
+  ungroup()
+
+### make plot
+g_factors_wa <- ggplot(df_sens_fa_long, 
+                       aes(x=Factor_num, 
+                           y=Factor_score_wa,
+                           fill=factor(Factor_num), 
+                           color=factor(Factor_num))) +
+  geom_point(position=position_jitter(width=.1), size=0.4, alpha=0.4) +
+  geom_half_boxplot(aes(x=Factor_num+0.2),
+                    position=position_nudge(x=-0.05), 
+                    side="r", outlier.shape = NA, center=TRUE, 
+                    errorbar.draw = FALSE, width=.1, alpha=0.4) +
+  geom_half_violin(position=position_nudge(x=.25), side="r", alpha=0.4) +
+  geom_point(data=errorbars, 
+             aes(x=Factor_num, y=mean), 
+             position = position_nudge(x = 0.3), size = 2.5) +
+  geom_errorbar(data=errorbars, 
+                aes(x=Factor_num,
+                    y=mean,
+                    ymin=lower, 
+                    ymax=upper),
+                position = position_nudge(x = 0.3), width = 0) +
+  scale_x_continuous(name="Type of Information",
+                     breaks=1:3,
+                     labels=c(
+                       "1"="Public",
+                       "2"="Private",
+                       "3"="Mental/Affective")) +
+  scale_y_continuous(name="", 
+                     limits = c(0.9, 4.1),
+                     breaks = 1:4,
+                     labels = c("1=\nnot at all sensitive",
+                                "2=\nnot too sensitive",
+                                "3=\nsomewhat sensitive",
+                                "4=\nvery sensitive")) +
+  scale_fill_manual(values=c("1"="#00BA38",
+                             "2"="#619CFF",
+                             "3"="#F8766D")) +
+  scale_color_manual(values=c("1"="#00BA38",
+                              "2"="#619CFF",
+                              "3"="#F8766D")) +
+  ggtitle("Perceived sensitivity of different types of information") +
+  theme_cowplot() +
+  theme(axis.text.y = element_text(hjust = 0.5, size=10)) +
+  guides(fill="none", color="none") +
+  NULL
+
+g_factors_wa
+ggsave("figures/SI_factors_distribution.tiff", g_factors_wa,
+       dpi=600, width=8, height=5)
+
+```
+
+
+
+# Statistical analyses using factor scores
+
+## - compare three factor scores
+```{r}
+### use factor1 (mental/affective) as reference
+df_sens_fa_long$Factor_name <- relevel(factor(df_sens_fa_long$Factor_name),
+                                       ref="Mental/Affective")
+
+### use the default treatment coding
+contrasts(df_sens_fa_long$Factor_name)
+
+### alternatively one could first check the main effect of Factor across three levels and then use emmeans to get pairwise comparisons; but it doesn"t really matter
+m_fs <- lmer(Factor_score_wa ~ Factor_name + (1|ID), data=df_sens_fa_long)
+
+Anova(m_fs, type=3)
+
+round(coef(summary(m_fs)), 4)
+
+### 95% confidence intervals around the estimates
+confint(m_fs, "beta_", level=0.95, 
+        method="boot", nsim=1000, boot.type="perc", 
+        FUN=NULL, quiet=FALSE, oldNames=TRUE) %>% 
+  round(2)
+
+
+```
+
+
+## - compare factors by SES, focusing on factor 1 (reference level) 
+```{r}
+### ignore Other-Gender since there are only 5 such subjects--not enough data
+df_sens_fa_long <- df_sens_fa_long %>%
+  mutate(
+    Gender_MF = relevel(factor(ifelse(Gender=="Other", NA, Gender)), 
+                        ref="Female"),
+    CollegeDegree = relevel(factor(CollegeDegree), 
+                            ref="college degree"))
+
+### use deviation coding of categorical variables
+### female = 0.5, male = -0.5
+contrasts(df_sens_fa_long$Gender_MF) <- contr.sum(2)/2 
+### college degree = 0.5, no cd = -0.5
+contrasts(df_sens_fa_long$CollegeDegree) <- contr.sum(2)/2
+
+```
+
+
+## - determine whether to include the interaction between SES variables or not
+```{r}
+### only interaction between Factor and SES
+m_fs_by_SES <- lmer(Factor_score_wa ~ 
+                      Factor_name + 
+                      scale(AgeLvl) + 
+                      scale(IncomeLvl) + 
+                      CollegeDegree + 
+                      Gender_MF +
+                      Factor_name:scale(AgeLvl) + 
+                      Factor_name:scale(IncomeLvl) + 
+                      Factor_name:CollegeDegree + 
+                      Factor_name:Gender_MF +
+                      (1|ID),
+                    data=df_sens_fa_long)
+
+### two-way interactions of SES as well
+m_fs_by_SES_2 <- lmer(Factor_score_wa ~ 
+                        Factor_name + 
+                        scale(AgeLvl) + 
+                        scale(IncomeLvl) + 
+                        CollegeDegree + 
+                        Gender_MF +
+                        Factor_name:scale(AgeLvl) + 
+                        Factor_name:scale(IncomeLvl) + 
+                        Factor_name:CollegeDegree +
+                        Factor_name:Gender_MF +
+                        scale(AgeLvl):scale(IncomeLvl) + 
+                        scale(AgeLvl):CollegeDegree + 
+                        scale(AgeLvl):Gender_MF +
+                        scale(IncomeLvl):CollegeDegree + 
+                        scale(IncomeLvl):Gender_MF +
+                        CollegeDegree:Gender_MF + 
+                        (1|ID),
+                      data=df_sens_fa_long)
+
+### check the impact of including the 2-way SES interactions -- no 
+anova(m_fs_by_SES, m_fs_by_SES_2)
+### no significant difference, thus consider the simpler model 
+
+round(coef(summary(m_fs_by_SES)), 4)
+
+confint(m_fs_by_SES, "beta_", level=0.95,
+        parm = c("(Intercept)", "scale(AgeLvl)", 
+                 "scale(IncomeLvl)", "CollegeDegree1", "Gender_MF1"),
+        method="boot", nsim=1000, boot.type="perc",
+        FUN=NULL, quiet=FALSE, oldNames=TRUE) %>%
+  round(2)
+
+```
+
+
+## - plot Factor 1 "Mental/Affective" by SES - lmer 
+```{r}
+### get marginal means
+df_plot_m_fs_by_SES <- ggemmeans(m_fs_by_SES, 
+                                 ~ AgeLvl + CollegeDegree + Gender_MF + Factor_name) %>% 
+  data.frame() %>% 
+  rename(CollegeDegree=group,
+         Gender=facet) %>%
+  filter(panel=="Mental/Affective") # only look at factor 1
+
+### plot
+df_plot_m_fs_by_SES %>%
+  ggplot(aes(x=x, y=predicted, fill=CollegeDegree, color=CollegeDegree)) +
+  facet_wrap(~Gender, nrow = 1) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, color=NULL), alpha=0.3) +
+  geom_line() +
+  scale_x_continuous(name="Age range",
+                     breaks=1:6,
+                     labels=c("1"="18-24",
+                              "2"="25-34",
+                              "3"="35-44",
+                              "4"="45-54",
+                              "5"="55-64",
+                              "6"="65+")) +
+  scale_y_continuous(name="Perceived sensitivity", 
+                     limits = c(1, 4),
+                     breaks = 1:4,
+                     labels = c("1=\nnot at all sensitive",
+                                "2=\nnot too sensitive",
+                                "3=\nsomewhat sensitive",
+                                "4=\nvery sensitive")) +
+  scale_fill_discrete(name="Education") +
+  guides(color="none") +
+  ggtitle("Perceived sensitivity of mental/affective information by socioeconomical status") +
+  theme_cowplot() +
+  theme(plot.margin = margin(5, 10, 5, 5)) +
+  NULL
+
+ggsave("figures/SI_SES_mental_affective.tiff", dpi=600, width=10.5, height=5)
+
+```
+
+
+## - does how early one adopts tech predicting perceived sensitivity (factors) 
+```{r}
+contrasts(df_sens_fa_long$Factor_name) <- contr.sum(3)
+m_fs_by_ear <- lmer(Factor_score_wa ~ 
+                      Factor_name * scale(EarAdoptLvl) + (1|ID),
+                    data=df_sens_fa_long)
+
+### anova result - only main effect of factor (already known)
+Anova(m_fs_by_ear, type=3, test.statistic="F")
+# summary(m_fs_by_ear) %>% coef() %>% round(4)
+
+### post-hoc comparisons
+emm_options(pbkrtest.limit = 5000)
+emm_options(lmerTest.limit = 5000)
+et <- emtrends(m_fs_by_ear, ~ Factor_name, var = "EarAdoptLvl")
+test(et)
+confint(m_fs_by_ear, "beta_",
+        parm="scale(EarAdoptLvl)",
+        level=0.95, method="boot", nsim=1000, boot.type="perc",
+        FUN=NULL, quiet=FALSE, oldNames=TRUE) %>%
+  round(2)
+
+```
+
+
+## - plot
+```{r}
+df_plot_m_fs_by_ear <- ggemmeans(m_fs_by_ear, EarAdoptLvl ~ Factor_name) %>% 
+  data.frame() %>% 
+  mutate(group=factor(group, 
+                      levels=c("Private", 
+                               "Mental/Affective", 
+                               "Public"))) %>%
+  rename(Factor_name=group)
+
+df_plot_m_fs_by_ear %>%
+  ggplot(aes(x=x, y=predicted, fill=Factor_name, color=Factor_name)) +
+  geom_ribbon(aes(ymin=conf.low, ymax=conf.high, color=NULL), alpha=0.3) +
+  geom_line() +
+  scale_x_continuous(name="How early do you adopt new technologies relative to others?",
+                     breaks=1:5,
+                     labels=c("1=first",
+                              "2=among the first",
+                              "3=middle",
+                              "4=among the last",
+                              "5=last")) +
+  scale_y_continuous(name="Perceived sensitivity", 
+                     limits = c(1, 4),
+                     breaks = 1:4,
+                     labels = c("1=\nnot at all sensitive",
+                                "2=\nnot too sensitive",
+                                "3=\nsomewhat sensitive",
+                                "4=\nvery sensitive")) +
+  scale_color_manual(values=c(
+    "Public"="#00BA38",
+    "Private"="#619CFF",
+    "Mental/Affective"="#F8766D")) +
+  scale_fill_manual(name="Type of Information",
+                    values=c(
+                      "Public"="#00BA38",
+                      "Private"="#619CFF",
+                      "Mental/Affective"="#F8766D")) +
+  guides(color="none") +
+  ggtitle("Early tech adoption had no correlation with perceived sensitivity of information") +
+  theme_cowplot() +
+  NULL
+
+ggsave("figures/Factor scores by Early Tech Adoption.tiff",
+       width = 11, height = 6, dpi = 600)
+
+```
+
+

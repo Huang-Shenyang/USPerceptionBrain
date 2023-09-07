@@ -1,0 +1,133 @@
+"Sensitivity_num","Sensitivity_text","Item","proportion","Description","mean","sd","se"
+1,"not at all sensitive","SI_1_SSN",0.00827586206896552,"Social Security Number",3.86,0.46,0.01
+2,"not too sensitive","SI_1_SSN",0.0186206896551724,"Social Security Number",3.86,0.46,0.01
+3,"somewhat sensitive","SI_1_SSN",0.0813793103448276,"Social Security Number",3.86,0.46,0.01
+4,"very sensitive","SI_1_SSN",0.891724137931034,"Social Security Number",3.86,0.46,0.01
+1,"not at all sensitive","SI_4_phone",0.0324137931034483,"Phone Conversations",3.52,0.77,0.02
+2,"not too sensitive","SI_4_phone",0.0772413793103448,"Phone Conversations",3.52,0.77,0.02
+3,"somewhat sensitive","SI_4_phone",0.233103448275862,"Phone Conversations",3.52,0.77,0.02
+4,"very sensitive","SI_4_phone",0.657241379310345,"Phone Conversations",3.52,0.77,0.02
+1,"not at all sensitive","SI_18_credit",0.0337931034482759,"Credit Score",3.44,0.79,0.02
+1,"not at all sensitive","SI_30_mental.thoughts",0.0406896551724138,"Thoughts in mind",3.44,0.83,0.02
+2,"not too sensitive","SI_18_credit",0.0862068965517241,"Credit Score",3.44,0.79,0.02
+2,"not too sensitive","SI_30_mental.thoughts",0.102068965517241,"Thoughts in mind",3.44,0.83,0.02
+3,"somewhat sensitive","SI_18_credit",0.282758620689655,"Credit Score",3.44,0.79,0.02
+3,"somewhat sensitive","SI_30_mental.thoughts",0.231724137931034,"Thoughts in mind",3.44,0.83,0.02
+4,"very sensitive","SI_18_credit",0.597241379310345,"Credit Score",3.44,0.79,0.02
+4,"very sensitive","SI_30_mental.thoughts",0.62551724137931,"Thoughts in mind",3.44,0.83,0.02
+1,"not at all sensitive","SI_2_health",0.0379310344827586,"Health",3.41,0.81,0.02
+1,"not at all sensitive","SI_5_email",0.0372413793103448,"Email Messages",3.41,0.81,0.02
+2,"not too sensitive","SI_2_health",0.096551724137931,"Health",3.41,0.81,0.02
+2,"not too sensitive","SI_5_email",0.0993103448275862,"Email Messages",3.41,0.81,0.02
+3,"somewhat sensitive","SI_2_health",0.280689655172414,"Health",3.41,0.81,0.02
+3,"somewhat sensitive","SI_5_email",0.282758620689655,"Email Messages",3.41,0.81,0.02
+4,"very sensitive","SI_2_health",0.584827586206897,"Health",3.41,0.81,0.02
+4,"very sensitive","SI_5_email",0.580689655172414,"Email Messages",3.41,0.81,0.02
+1,"not at all sensitive","SI_7_texts",0.0427586206896552,"Text Messages",3.4,0.84,0.02
+2,"not too sensitive","SI_7_texts",0.104827586206897,"Text Messages",3.4,0.84,0.02
+3,"somewhat sensitive","SI_7_texts",0.263448275862069,"Text Messages",3.4,0.84,0.02
+4,"very sensitive","SI_7_texts",0.588965517241379,"Text Messages",3.4,0.84,0.02
+1,"not at all sensitive","SI_29_mental.image",0.0489655172413793,"Images in mind",3.38,0.86,0.02
+2,"not too sensitive","SI_29_mental.image",0.109655172413793,"Images in mind",3.38,0.86,0.02
+3,"somewhat sensitive","SI_29_mental.image",0.257931034482759,"Images in mind",3.38,0.86,0.02
+4,"very sensitive","SI_29_mental.image",0.583448275862069,"Images in mind",3.38,0.86,0.02
+1,"not at all sensitive","SI_6_location",0.0324137931034483,"Location",3.35,0.81,0.02
+2,"not too sensitive","SI_6_location",0.115862068965517,"Location",3.35,0.81,0.02
+3,"somewhat sensitive","SI_6_location",0.319310344827586,"Location",3.35,0.81,0.02
+4,"very sensitive","SI_6_location",0.532413793103448,"Location",3.35,0.81,0.02
+1,"not at all sensitive","SI_8_numbers",0.0531034482758621,"Phone Numbers Called/Texted",3.27,0.89,0.02
+2,"not too sensitive","SI_8_numbers",0.135862068965517,"Phone Numbers Called/Texted",3.27,0.89,0.02
+3,"somewhat sensitive","SI_8_numbers",0.302758620689655,"Phone Numbers Called/Texted",3.27,0.89,0.02
+4,"very sensitive","SI_8_numbers",0.508275862068965,"Phone Numbers Called/Texted",3.27,0.89,0.02
+1,"not at all sensitive","SI_25_brain.health",0.0593103448275862,"Brain Health",3.23,0.9,0.02
+2,"not too sensitive","SI_25_brain.health",0.137931034482759,"Brain Health",3.23,0.9,0.02
+3,"somewhat sensitive","SI_25_brain.health",0.312413793103448,"Brain Health",3.23,0.9,0.02
+4,"very sensitive","SI_25_brain.health",0.490344827586207,"Brain Health",3.23,0.9,0.02
+1,"not at all sensitive","SI_10_relationship",0.0627586206896552,"Relationship History",3.18,0.91,0.02
+1,"not at all sensitive","SI_27_emotion",0.0496551724137931,"Emotions",3.18,0.89,0.02
+2,"not too sensitive","SI_10_relationship",0.152413793103448,"Relationship History",3.18,0.91,0.02
+2,"not too sensitive","SI_27_emotion",0.171034482758621,"Emotions",3.18,0.89,0.02
+3,"somewhat sensitive","SI_10_relationship",0.322068965517241,"Relationship History",3.18,0.91,0.02
+3,"somewhat sensitive","SI_27_emotion",0.333793103448276,"Emotions",3.18,0.89,0.02
+4,"very sensitive","SI_10_relationship",0.462758620689655,"Relationship History",3.18,0.91,0.02
+4,"very sensitive","SI_27_emotion",0.44551724137931,"Emotions",3.18,0.89,0.02
+1,"not at all sensitive","SI_24_brainwave",0.0689655172413793,"Brainwaves",3.17,0.94,0.02
+2,"not too sensitive","SI_24_brainwave",0.16551724137931,"Brainwaves",3.17,0.94,0.02
+3,"somewhat sensitive","SI_24_brainwave",0.292413793103448,"Brainwaves",3.17,0.94,0.02
+4,"very sensitive","SI_24_brainwave",0.473103448275862,"Brainwaves",3.17,0.94,0.02
+1,"not at all sensitive","SI_28_anxiety",0.0558620689655172,"Anxiety",3.16,0.9,0.02
+2,"not too sensitive","SI_28_anxiety",0.166896551724138,"Anxiety",3.16,0.9,0.02
+3,"somewhat sensitive","SI_28_anxiety",0.335862068965517,"Anxiety",3.16,0.9,0.02
+4,"very sensitive","SI_28_anxiety",0.441379310344828,"Anxiety",3.16,0.9,0.02
+1,"not at all sensitive","SI_34_genetic",0.0793103448275862,"Genetic information",3.14,0.96,0.03
+2,"not too sensitive","SI_34_genetic",0.157931034482759,"Genetic information",3.14,0.96,0.03
+3,"somewhat sensitive","SI_34_genetic",0.301379310344828,"Genetic information",3.14,0.96,0.03
+4,"very sensitive","SI_34_genetic",0.461379310344828,"Genetic information",3.14,0.96,0.03
+1,"not at all sensitive","SI_12_search",0.0524137931034483,"Online Search History",3.07,0.86,0.02
+2,"not too sensitive","SI_12_search",0.182758620689655,"Online Search History",3.07,0.86,0.02
+3,"somewhat sensitive","SI_12_search",0.406206896551724,"Online Search History",3.07,0.86,0.02
+4,"very sensitive","SI_12_search",0.358620689655172,"Online Search History",3.07,0.86,0.02
+1,"not at all sensitive","SI_22_concentration",0.0648275862068965,"Concentration",3.05,0.91,0.02
+2,"not too sensitive","SI_22_concentration",0.197931034482759,"Concentration",3.05,0.91,0.02
+3,"somewhat sensitive","SI_22_concentration",0.359310344827586,"Concentration",3.05,0.91,0.02
+4,"very sensitive","SI_22_concentration",0.377931034482759,"Concentration",3.05,0.91,0.02
+1,"not at all sensitive","SI_20_alertness",0.0606896551724138,"Alertness",3.04,0.9,0.02
+2,"not too sensitive","SI_20_alertness",0.202068965517241,"Alertness",3.04,0.9,0.02
+3,"somewhat sensitive","SI_20_alertness",0.373793103448276,"Alertness",3.04,0.9,0.02
+4,"very sensitive","SI_20_alertness",0.363448275862069,"Alertness",3.04,0.9,0.02
+1,"not at all sensitive","SI_11_website",0.0627586206896552,"Websites Visited",2.96,0.86,0.02
+2,"not too sensitive","SI_11_website",0.204827586206897,"Websites Visited",2.96,0.86,0.02
+3,"somewhat sensitive","SI_11_website",0.442758620689655,"Websites Visited",2.96,0.86,0.02
+4,"very sensitive","SI_11_website",0.289655172413793,"Websites Visited",2.96,0.86,0.02
+1,"not at all sensitive","SI_19_drowsiness",0.0868965517241379,"Drowsiness",2.95,0.95,0.02
+1,"not at all sensitive","SI_21_focus",0.0703448275862069,"Focus",2.95,0.92,0.02
+2,"not too sensitive","SI_19_drowsiness",0.215862068965517,"Drowsiness",2.95,0.95,0.02
+2,"not too sensitive","SI_21_focus",0.236551724137931,"Focus",2.95,0.92,0.02
+3,"somewhat sensitive","SI_19_drowsiness",0.355172413793103,"Drowsiness",2.95,0.95,0.02
+3,"somewhat sensitive","SI_21_focus",0.36551724137931,"Focus",2.95,0.92,0.02
+4,"very sensitive","SI_19_drowsiness",0.342068965517241,"Drowsiness",2.95,0.95,0.02
+4,"very sensitive","SI_21_focus",0.327586206896552,"Focus",2.95,0.92,0.02
+1,"not at all sensitive","SI_14_friends",0.0806896551724138,"Friends",2.91,0.92,0.02
+1,"not at all sensitive","SI_26_substance",0.155862068965517,"Substance Use",2.91,1.08,0.03
+2,"not too sensitive","SI_14_friends",0.231724137931034,"Friends",2.91,0.92,0.02
+2,"not too sensitive","SI_26_substance",0.164827586206897,"Substance Use",2.91,1.08,0.03
+3,"somewhat sensitive","SI_14_friends",0.388965517241379,"Friends",2.91,0.92,0.02
+3,"somewhat sensitive","SI_26_substance",0.291724137931034,"Substance Use",2.91,1.08,0.03
+4,"very sensitive","SI_14_friends",0.298620689655172,"Friends",2.91,0.92,0.02
+4,"very sensitive","SI_26_substance",0.387586206896552,"Substance Use",2.91,1.08,0.03
+1,"not at all sensitive","SI_35_social.media",0.0972413793103448,"Social Media Contents",2.89,0.96,0.03
+2,"not too sensitive","SI_35_social.media",0.229655172413793,"Social Media Contents",2.89,0.96,0.03
+3,"somewhat sensitive","SI_35_social.media",0.358620689655172,"Social Media Contents",2.89,0.96,0.03
+4,"very sensitive","SI_35_social.media",0.31448275862069,"Social Media Contents",2.89,0.96,0.03
+1,"not at all sensitive","SI_9_birthdate",0.118620689655172,"Birth Date",2.84,1,0.03
+2,"not too sensitive","SI_9_birthdate",0.230344827586207,"Birth Date",2.84,1,0.03
+3,"somewhat sensitive","SI_9_birthdate",0.340689655172414,"Birth Date",2.84,1,0.03
+4,"very sensitive","SI_9_birthdate",0.310344827586207,"Birth Date",2.84,1,0.03
+1,"not at all sensitive","SI_31_intelligence",0.107586206896552,"Intelligence Quotient",2.78,0.95,0.02
+2,"not too sensitive","SI_31_intelligence",0.264137931034483,"Intelligence Quotient",2.78,0.95,0.02
+3,"somewhat sensitive","SI_31_intelligence",0.370344827586207,"Intelligence Quotient",2.78,0.95,0.02
+4,"very sensitive","SI_31_intelligence",0.257931034482759,"Intelligence Quotient",2.78,0.95,0.02
+1,"not at all sensitive","SI_32_sleep",0.128965517241379,"Sleep Patterns",2.7,0.98,0.03
+2,"not too sensitive","SI_32_sleep",0.28551724137931,"Sleep Patterns",2.7,0.98,0.03
+3,"somewhat sensitive","SI_32_sleep",0.342758620689655,"Sleep Patterns",2.7,0.98,0.03
+4,"very sensitive","SI_32_sleep",0.242758620689655,"Sleep Patterns",2.7,0.98,0.03
+1,"not at all sensitive","SI_17_purchases",0.122068965517241,"Purchasing Habits",2.58,0.89,0.02
+2,"not too sensitive","SI_17_purchases",0.324827586206897,"Purchasing Habits",2.58,0.89,0.02
+3,"somewhat sensitive","SI_17_purchases",0.399310344827586,"Purchasing Habits",2.58,0.89,0.02
+4,"very sensitive","SI_17_purchases",0.153793103448276,"Purchasing Habits",2.58,0.89,0.02
+1,"not at all sensitive","SI_33_sexual.orientation",0.255172413793103,"Sexual Orientation",2.52,1.15,0.03
+2,"not too sensitive","SI_33_sexual.orientation",0.248275862068966,"Sexual Orientation",2.52,1.15,0.03
+3,"somewhat sensitive","SI_33_sexual.orientation",0.21448275862069,"Sexual Orientation",2.52,1.15,0.03
+4,"very sensitive","SI_33_sexual.orientation",0.282068965517241,"Sexual Orientation",2.52,1.15,0.03
+1,"not at all sensitive","SI_15_politics",0.173103448275862,"Political Views",2.5,0.97,0.03
+2,"not too sensitive","SI_15_politics",0.32551724137931,"Political Views",2.5,0.97,0.03
+3,"somewhat sensitive","SI_15_politics",0.328965517241379,"Political Views",2.5,0.97,0.03
+4,"very sensitive","SI_15_politics",0.172413793103448,"Political Views",2.5,0.97,0.03
+1,"not at all sensitive","SI_13_religion",0.206896551724138,"Religious Views",2.49,1.03,0.03
+2,"not too sensitive","SI_13_religion",0.296551724137931,"Religious Views",2.49,1.03,0.03
+3,"somewhat sensitive","SI_13_religion",0.296551724137931,"Religious Views",2.49,1.03,0.03
+4,"very sensitive","SI_13_religion",0.2,"Religious Views",2.49,1.03,0.03
+1,"not at all sensitive","SI_16_media",0.188275862068966,"Media Preferences",2.34,0.9,0.02
+2,"not too sensitive","SI_16_media",0.393793103448276,"Media Preferences",2.34,0.9,0.02
+3,"somewhat sensitive","SI_16_media",0.309655172413793,"Media Preferences",2.34,0.9,0.02
+4,"very sensitive","SI_16_media",0.108275862068966,"Media Preferences",2.34,0.9,0.02

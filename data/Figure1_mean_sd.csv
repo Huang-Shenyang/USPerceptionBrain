@@ -1,0 +1,34 @@
+"Item","Description","mean","sd","se"
+"SI_1_SSN","Social Security Number",3.86,0.46,0.01
+"SI_4_phone","Phone Conversations",3.52,0.77,0.02
+"SI_18_credit","Credit Score",3.44,0.79,0.02
+"SI_30_mental.thoughts","Thoughts in mind",3.44,0.83,0.02
+"SI_2_health","Health",3.41,0.81,0.02
+"SI_5_email","Email Messages",3.41,0.81,0.02
+"SI_7_texts","Text Messages",3.4,0.84,0.02
+"SI_29_mental.image","Images in mind",3.38,0.86,0.02
+"SI_6_location","Location",3.35,0.81,0.02
+"SI_8_numbers","Phone Numbers Called/Texted",3.27,0.89,0.02
+"SI_25_brain.health","Brain Health",3.23,0.9,0.02
+"SI_10_relationship","Relationship History",3.18,0.91,0.02
+"SI_27_emotion","Emotions",3.18,0.89,0.02
+"SI_24_brainwave","Brainwaves",3.17,0.94,0.02
+"SI_28_anxiety","Anxiety",3.16,0.9,0.02
+"SI_34_genetic","Genetic information",3.14,0.96,0.03
+"SI_12_search","Online Search History",3.07,0.86,0.02
+"SI_22_concentration","Concentration",3.05,0.91,0.02
+"SI_20_alertness","Alertness",3.04,0.9,0.02
+"SI_11_website","Websites Visited",2.96,0.86,0.02
+"SI_19_drowsiness","Drowsiness",2.95,0.95,0.02
+"SI_21_focus","Focus",2.95,0.92,0.02
+"SI_14_friends","Friends",2.91,0.92,0.02
+"SI_26_substance","Substance Use",2.91,1.08,0.03
+"SI_35_social.media","Social Media Contents",2.89,0.96,0.03
+"SI_9_birthdate","Birth Date",2.84,1,0.03
+"SI_31_intelligence","Intelligence Quotient",2.78,0.95,0.02
+"SI_32_sleep","Sleep Patterns",2.7,0.98,0.03
+"SI_17_purchases","Purchasing Habits",2.58,0.89,0.02
+"SI_33_sexual.orientation","Sexual Orientation",2.52,1.15,0.03
+"SI_15_politics","Political Views",2.5,0.97,0.03
+"SI_13_religion","Religious Views",2.49,1.03,0.03
+"SI_16_media","Media Preferences",2.34,0.9,0.02
